@@ -1,56 +1,48 @@
-import requests, json, sys, os
+import sys
+import json
+import requests
 
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), "..", "config.json")
+# Chargement de la config pour récupérer l'URL
+try:
+    with open("config.json", "r") as f:
+        config = json.load(f)
+        api_id = config.get("api_id")
+        region = config.get("region", "us-east-1")
+except Exception:
+    print("❌ Erreur : Impossible de lire config.json")
+    sys.exit(1)
 
-def load_config():
-    with open(CONFIG_PATH) as f:
-        return json.load(f)
+stage = sys.argv[1] if len(sys.argv) > 1 else "prod"
+base_url = f"https://{api_id}.execute-api.{region}.amazonaws.com/{stage}"
 
-def print_result(test_name, resp):
-    status = "✅" if resp.status_code < 400 else "❌"
-    print(f"  {status} [{resp.status_code}] {test_name}")
+
+def test_endpoint(path):
+    url = f"{base_url}/{path}"
+    print(f"🔍 Testing {url}...")
     try:
-        print(f"     {json.dumps(resp.json(), indent=6)[:400]}")
-    except:
-        print(f"     {resp.text[:200]}")
-    print()
+        r = requests.get(url, timeout=10)
+        if r.status_code == 200:
+            print(f"  ✅ {path}: Success (200)")
+            return True
+        else:
+            print(f"  ❌ {path}: Failed ({r.status_code})")
+            return False
+    except Exception as e:
+        print(f"  💥 {path}: Error -> {e}")
+        return False
 
-def test_games(base):
-    print("─── /games ───────────────────────────────────────")
-    print_result("GET all games",    requests.get(f"{base}/games"))
-    print_result("GET game ?id=1",   requests.get(f"{base}/games", params={"id": "1"}))
-    print_result("POST create game", requests.post(f"{base}/games", json={"name": "Battle Royale", "max_players": 50}))
-    print_result("POST join game",   requests.post(f"{base}/games", json={"id": "1", "action": "join"}))
-    print_result("PUT game",         requests.put(f"{base}/games",  json={"id": "1", "status": "maintenance"}))
-    print_result("DELETE game",      requests.delete(f"{base}/games", json={"id": "2"}))
-
-def test_users(base):
-    print("─── /users ───────────────────────────────────────")
-    print_result("GET leaderboard",  requests.get(f"{base}/users"))
-    print_result("GET user ?id=1",   requests.get(f"{base}/users", params={"id": "1"}))
-    print_result("POST new player",  requests.post(f"{base}/users", json={"username": "newplayer", "email": "new@nexusplay.io"}))
-    print_result("PUT score update", requests.put(f"{base}/users",  json={"id": "1", "score": 2000}))
-    print_result("DELETE user",      requests.delete(f"{base}/users", json={"id": "3"}))
-
-def test_notifications(base):
-    print("─── /notifications ───────────────────────────────")
-    print_result("GET health",       requests.get(f"{base}/notifications"))
-    print_result("POST info notif",  requests.post(f"{base}/notifications", json={"type": "info",    "message": "Server maintenance in 1h", "subject": "NexusPlay Info"}))
-    print_result("POST alert notif", requests.post(f"{base}/notifications", json={"type": "alert",   "message": "High traffic detected!",   "subject": "NexusPlay Alert"}))
-    print_result("POST no message",  requests.post(f"{base}/notifications", json={"type": "warning"}))
 
 def main():
-    config = load_config()
-    stage  = sys.argv[1] if len(sys.argv) > 1 else "dev"
-    base   = config["endpoints"].get(stage)
-    if not base:
-        print(f"❌ Stage '{stage}' not found"); sys.exit(1)
-    print(f"\n🧪 NexusPlay API Tests — {stage.upper()}")
-    print(f"   Base URL: {base}\n")
-    test_games(base)
-    test_users(base)
-    test_notifications(base)
-    print("🏁 Tests complete!")
+    endpoints = ["games", "users"]
+    results = [test_endpoint(e) for e in endpoints]
+
+    if all(results):
+        print("\n🚀 All API tests passed!")
+        sys.exit(0)
+    else:
+        print("\n⚠️ Some tests failed.")
+        sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

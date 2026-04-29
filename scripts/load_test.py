@@ -1,32 +1,21 @@
-from locust import HttpUser, task, between
-import json, random
+import random
+from locust import HttpUser
+from locust import task
+from locust import between
+
 
 class NexusPlayUser(HttpUser):
     wait_time = between(1, 3)
 
     @task(3)
-    def get_games(self):
+    def view_games(self):
         self.client.get("/prod/games")
 
-    @task(2)
-    def get_leaderboard(self):
+    @task(1)
+    def view_users(self):
         self.client.get("/prod/users")
 
     @task(1)
-    def join_game(self):
-        self.client.post("/prod/games", json={"id": str(random.randint(1, 3)), "action": "join"})
-
-    @task(1)
-    def create_user(self):
-        self.client.post("/prod/users", json={
-            "username": f"player_{random.randint(1000, 9999)}",
-            "email":    f"player_{random.randint(1000, 9999)}@nexusplay.io"
-        })
-
-    @task(1)
-    def send_notification(self):
-        self.client.post("/prod/notifications", json={
-            "type":    "info",
-            "message": "Load test notification",
-            "subject": "Load Test"
-        })
+    def mock_error(self):
+        # On teste un endpoint inexistant pour vérifier le monitoring
+        self.client.get("/prod/unknown", name="/error_test")
