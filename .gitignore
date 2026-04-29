@@ -11,3 +11,4 @@ config.json
 *.zip
 *.log
 .env
+.venv/
