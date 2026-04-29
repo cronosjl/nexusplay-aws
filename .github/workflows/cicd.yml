@@ -1,0 +1,65 @@
+name: NexusPlay CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop, test]
+  pull_request:
+    branches: [main]
+
+env:
+  AWS_REGION:     us-east-1
+  PYTHON_VERSION: "3.10"
+
+jobs:
+  lint:
+    name: 🔍 Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with: { python-version: "${{ env.PYTHON_VERSION }}" }
+      - run: pip install flake8
+      - run: flake8 services/ scripts/ --max-line-length=120 --ignore=E501,W503,E302,E241,E221,F401
+
+  deploy:
+    name: 🚀 Deploy (${{ github.ref_name }})
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with: { python-version: "${{ env.PYTHON_VERSION }}" }
+      - run: pip install boto3 requests locust
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ env.AWS_REGION }}
+
+      - name: Deploy
+        run: python scripts/deploy.py
+
+      - name: Test API
+        run: |
+          STAGE=${{ github.ref_name == 'main' && 'prod' || github.ref_name == 'test' && 'test' || 'dev' }}
+          python scripts/test_api.py $STAGE
+
+      - name: Load Test (prod only)
+        if: github.ref_name == 'main'
+        run: |
+          API_ID=$(python3 -c "import json; print(json.load(open('config.json'))['api_id'])")
+          locust -f scripts/load_test.py \
+            --host=https://$API_ID.execute-api.us-east-1.amazonaws.com \
+            --users=20 --spawn-rate=2 --run-time=30s --headless \
+            --html=monitoring/load_test_report.html
+        continue-on-error: true
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexusplay-${{ github.ref_name }}
+          path: |
+            config.json
+            monitoring/load_test_report.html
