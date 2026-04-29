@@ -143,6 +143,16 @@ def main():
 
     print(f"\n✅ Terminé ! URL : https://{api_id}.execute-api.{REGION}.amazonaws.com/prod/games")
 
+    # Génération du fichier config.json pour les tests CI/CD
+    config_data = {
+        "api_id": api_id,
+        "region": REGION,
+        "project": PROJECT
+    }
+    with open("config.json", "w") as f:
+        json.dump(config_data, f)
+    print("  📂 config.json généré avec succès.")
+
 
 if __name__ == "__main__":
     main()
