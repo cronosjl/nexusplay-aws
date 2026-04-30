@@ -1,6 +1,10 @@
-import boto3, json, os, zipfile, time
+import boto3
+import json
+import os
+import zipfile
+import time
 
-REGION  = "us-east-1"
+REGION = "us-east-1"
 PROJECT = "nexusplay"
 
 SERVICES = {
@@ -33,9 +37,11 @@ def get_or_create_role():
         RoleName="NexusPlayLambdaRole",
         AssumeRolePolicyDocument=json.dumps({
             "Version": "2012-10-17",
-            "Statement": [{"Effect": "Allow",
+            "Statement": [{
+                "Effect": "Allow",
                 "Principal": {"Service": "lambda.amazonaws.com"},
-                "Action": "sts:AssumeRole"}]
+                "Action": "sts:AssumeRole"
+            }]
         })
     )
     for p in [
@@ -54,7 +60,14 @@ def zip_service(py_file, zip_path):
     print(f"  ✅ Zipped: {zip_path}")
 
 
-def deploy_lambda(name, py_file, role_arn, env_vars={}):
+def wait_lambda_updated(full_name):
+    waiter = lambda_client.get_waiter("function_updated")
+    waiter.wait(FunctionName=full_name)
+
+
+def deploy_lambda(name, py_file, role_arn, env_vars=None):
+    if env_vars is None:
+        env_vars = {}
     full_name = f"{PROJECT}-{name}"
     zip_path  = f"/tmp/{name}.zip"
     zip_service(py_file, zip_path)
@@ -62,21 +75,28 @@ def deploy_lambda(name, py_file, role_arn, env_vars={}):
         code = f.read()
     try:
         lambda_client.create_function(
-            FunctionName=full_name, Runtime="python3.10",
-            Role=role_arn, Handler="lambda_function.lambda_handler",
-            Code={"ZipFile": code}, Timeout=30, MemorySize=128,
+            FunctionName=full_name,
+            Runtime="python3.10",
+            Role=role_arn,
+            Handler="lambda_function.lambda_handler",
+            Code={"ZipFile": code},
+            Timeout=30,
+            MemorySize=128,
             Description=f"{name} - NexusPlay",
             Environment={"Variables": env_vars},
         )
         print(f"  🆕 Created: {full_name}")
-        time.sleep(8)
+        wait_lambda_updated(full_name)
     except lambda_client.exceptions.ResourceConflictException:
         lambda_client.update_function_code(FunctionName=full_name, ZipFile=code)
+        wait_lambda_updated(full_name)
         if env_vars:
             lambda_client.update_function_configuration(
-                FunctionName=full_name, Environment={"Variables": env_vars})
+                FunctionName=full_name,
+                Environment={"Variables": env_vars}
+            )
+            wait_lambda_updated(full_name)
         print(f"  🔄 Updated: {full_name}")
-        time.sleep(3)
     return lambda_client.get_function_configuration(FunctionName=full_name)["FunctionArn"]
 
 
@@ -107,7 +127,10 @@ def setup_secrets(topic_arn):
         )
         print(f"  ✅ Secret created: {PROJECT}/config")
     except sm_client.exceptions.ResourceExistsException:
-        sm_client.update_secret(SecretId=f"{PROJECT}/config", SecretString=secret_value)
+        sm_client.update_secret(
+            SecretId=f"{PROJECT}/config",
+            SecretString=secret_value
+        )
         print(f"  🔄 Secret updated: {PROJECT}/config")
 
 
@@ -122,10 +145,12 @@ def setup_cloudwatch(lambda_arns):
         ]:
             try:
                 cw.put_metric_alarm(
-                    AlarmName=alarm_name, MetricName=metric,
+                    AlarmName=alarm_name,
+                    MetricName=metric,
                     Namespace="AWS/Lambda",
                     Dimensions=[{"Name": "FunctionName", "Value": fn_name}],
-                    Period=60, EvaluationPeriods=1,
+                    Period=60,
+                    EvaluationPeriods=1,
                     Threshold=threshold,
                     ComparisonOperator="GreaterThanThreshold",
                     Statistic="Sum" if metric == "Errors" else "Average",
@@ -151,7 +176,7 @@ def create_api(lambda_arns):
         )["id"]
         print(f"  🆕 Created API: {api_id}")
     root_id = apigw_client.get_resources(restApiId=api_id)["items"][0]["id"]
-    routes  = {
+    routes = {
         "games":         lambda_arns["game-service"],
         "users":         lambda_arns["user-service"],
         "notifications": lambda_arns["notification-service"],
@@ -168,16 +193,20 @@ def _setup_resource(api_id, root_id, path, fn_arn):
         restApiId=api_id, parentId=root_id, pathPart=path)["id"]
     print(f"  ✅ Resource /{path} ready")
     account_id = get_account_id()
-    uri = (f"arn:aws:apigateway:{REGION}:lambda:path"
-           f"/2015-03-31/functions/{fn_arn}/invocations")
+    uri = (
+        f"arn:aws:apigateway:{REGION}:lambda:path"
+        f"/2015-03-31/functions/{fn_arn}/invocations"
+    )
     for method in ["GET", "POST", "PUT", "DELETE"]:
         try:
             apigw_client.get_method(
                 restApiId=api_id, resourceId=resource_id, httpMethod=method)
         except apigw_client.exceptions.NotFoundException:
-            apigw_client.put_method(restApiId=api_id, resourceId=resource_id,
+            apigw_client.put_method(
+                restApiId=api_id, resourceId=resource_id,
                 httpMethod=method, authorizationType="NONE")
-            apigw_client.put_integration(restApiId=api_id, resourceId=resource_id,
+            apigw_client.put_integration(
+                restApiId=api_id, resourceId=resource_id,
                 httpMethod=method, type="AWS_PROXY",
                 integrationHttpMethod="POST", uri=uri)
             print(f"     ✅ {method} /{path}")
@@ -205,7 +234,8 @@ def deploy_stages(api_id):
             print(f"  🆕 Stage '{stage}' deployed")
         if stage == "prod":
             try:
-                apigw_client.update_stage(restApiId=api_id, stageName=stage,
+                apigw_client.update_stage(
+                    restApiId=api_id, stageName=stage,
                     patchOperations=[
                         {"op": "replace", "path": "/cacheClusterEnabled", "value": "true"},
                         {"op": "replace", "path": "/cacheClusterSize",    "value": "0.5"},
@@ -213,8 +243,9 @@ def deploy_stages(api_id):
                 print(f"  ✅ Cache enabled on prod")
             except Exception as e:
                 print(f"  ⚠️  Cache skipped: {e}")
-        endpoints[stage] = (f"https://{api_id}.execute-api"
-                            f".{REGION}.amazonaws.com/{stage}")
+        endpoints[stage] = (
+            f"https://{api_id}.execute-api.{REGION}.amazonaws.com/{stage}"
+        )
     return endpoints
 
 
@@ -228,7 +259,7 @@ def save_config(api_id, lambda_arns, endpoints, topic_arn):
     }
     with open("config.json", "w") as f:
         json.dump(config, f, indent=2)
-    print(f"\n  💾 Config saved → config.json")
+    print("\n  💾 Config saved → config.json")
 
 
 def main():
