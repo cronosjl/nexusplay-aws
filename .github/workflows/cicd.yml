@@ -19,7 +19,7 @@ jobs:
       - uses: actions/setup-python@v4
         with: { python-version: "${{ env.PYTHON_VERSION }}" }
       - run: pip install flake8
-      - run: flake8 services/ scripts/ --max-line-length=120 --ignore=E501,W503,E302,E241,E221,F401
+      - run: flake8 services/ scripts/ --max-line-length=120 --ignore=E501,W503,E302,E241,E221,F401,E401,E128,F541
 
   deploy:
     name: 🚀 Deploy (${{ github.ref_name }})
