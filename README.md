@@ -159,12 +159,12 @@ Simulation avec 20 utilisateurs simultanés via Locust :
 | ![VPC 1](images/serveurDNShautementdisponiblevpc1.png) | VPC Multi-AZ (Partie 1). |
 | ![VPC 2](images/serveurDNShautementdisponiblevpc2.png) | VPC Multi-AZ (Partie 2). |
 
-###  Scalabilité Automatique
+### 🚀 Scalabilité Automatique
 | Image | Description |
 | :--- | :--- |
-| ![Auto-scaling 1](images/syste%CC%80medescalabilite%CC%81automatiqueautoscaling1.png) | Politique d'Auto-scaling. |
-| ![Auto-scaling 2](images/syste%CC%80medescalabilite%CC%81automatiqueautoscaling2.png) | Concurrence et limites. |
-| ![Auto-scaling 3](images/syste%CC%80medescalabilite%CC%81automatiqueautoscaling3.png) | Événements de mise à l'échelle. |
+| ![Auto-scaling 1](images/autoscaling1.png) | Politique d'Auto-scaling. |
+| ![Auto-scaling 2](images/autoscaling2.png) | Concurrence et limites. |
+| ![Auto-scaling 3](images/autoscaling3.png) | Événements de mise à l'échelle. |
 
 ###  Monitoring & Alerting (CloudWatch)
 | Image | Description |

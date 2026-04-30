@@ -36,7 +36,7 @@ Mise en place de **Route 53** pour la gestion DNS avec une stratégie Active/Bac
 ### 3. Scalabilité Automatique
 Grâce à **AWS Lambda**, l'infrastructure s'adapte instantanément au trafic, passant de 0 à des milliers d'utilisateurs sans intervention manuelle.
 
-![Auto-scaling Lambda](../images/syste%CC%80medescalabilite%CC%81automatiqueautoscaling1.png)
+![Auto-scaling Lambda](../images/autoscaling1.png)
 *Preuve de la capacité de mise à l'échelle automatique.*
 
 ### 4. Monitoring Centralisé
@@ -99,9 +99,9 @@ Cette section regroupe l'intégralité des captures d'écran validant la mise en
 ###  Scalabilité Automatique
 | Image | Description |
 | :--- | :--- |
-| ![Auto-scaling 1](../images/syste%CC%80medescalabilite%CC%81automatiqueautoscaling1.png) | Politique d'Auto-scaling Lambda. |
-| ![Auto-scaling 2](../images/syste%CC%80medescalabilite%CC%81automatiqueautoscaling2.png) | Configuration de la concurrence et des limites. |
-| ![Auto-scaling 3](../images/syste%CC%80medescalabilite%CC%81automatiqueautoscaling3.png) | Historique des événements de mise à l'échelle. |
+| ![Auto-scaling 1](../images/autoscaling1.png) | Politique d'Auto-scaling Lambda. |
+| ![Auto-scaling 2](../images/autoscaling2.png) | Configuration de la concurrence et des limites. |
+| ![Auto-scaling 3](../images/autoscaling3.png) | Historique des événements de mise à l'échelle. |
 
 ###  Monitoring & Alerting (CloudWatch)
 | Image | Description |
@@ -115,8 +115,8 @@ Cette section regroupe l'intégralité des captures d'écran validant la mise en
 ###  Système de Notification (SNS)
 | Image | Description |
 | :--- | :--- |
-| ![Notif 1](../images/Mettreenplaceunsyste%CC%80medenotification1.jpeg) | Configuration du topic SNS NexusPlay. |
-| ![Notif 2](../images/Mettreenplaceunsyste%CC%80medenotification2.png) | Détails des abonnements aux alertes. |
+| ![Notif 1](../images/notification1.jpeg) | Configuration du topic SNS NexusPlay. |
+| ![Notif 2](../images/notification2.png) | Détails des abonnements aux alertes. |
 
 ###  Sécurité & Secrets
 | Image | Description |
@@ -127,7 +127,7 @@ Cette section regroupe l'intégralité des captures d'écran validant la mise en
 ###  Performance & Cache
 | Image | Description |
 | :--- | :--- |
-| ![Cache](../images/Inte%CC%81greruncachepourame%CC%81liorerlesperformances.png) | Activation du cache sur le stage Prod. |
+| ![Cache](../images/cacheperformance.png) | Activation du cache sur le stage Prod. |
 
 ###  Pipeline CI/CD (GitHub Actions)
 | Image | Description |

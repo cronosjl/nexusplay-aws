@@ -40,7 +40,7 @@ Les alarmes sont configurées pour être auto-réparatrices (dans la mesure du p
 - **Seuil d'erreur** : Si le taux d'erreur dépasse 5%, une investigation immédiate est requise sur le service concerné.
 - **Latence (Latency P99)** : Une latence élevée indique généralement un problème de démarrage à froid (Cold Start) ou un goulot d'étranglement sur une ressource externe.
 
-![SNS Notifications](../images/Mettreenplaceunsyste%CC%80medenotification2.png)
+![SNS Notifications](../images/notification2.png)
 *Système de notification configuré via SNS.*
 
 ---
@@ -73,13 +73,13 @@ Le stage `prod` utilise un cache de **0.5 GB** avec un **TTL de 300 secondes**.
 - **Avantage** : Réduction drastique du nombre d'invocations Lambda pour les requêtes de lecture répétitives (ex: Leaderboard).
 - **Invalidation** : Si nécessaire, le cache peut être vidé via la console AWS ou via une commande CLI.
 
-![API Cache Configuration](../images/Inte%CC%81greruncachepourame%CC%81liorerlesperformances.png)
+![API Cache Configuration](../images/cacheperformance.png)
 *Optimisation des performances via la mise en cache.*
 
 ### Réduction des Cold Starts
 - Les fonctions Lambda sont configurées avec **128MB** de RAM. Pour des performances accrues, augmenter cette valeur alloue proportionnellement plus de puissance CPU.
 
-![Auto-scaling Configuration](../images/syste%CC%80medescalabilite%CC%81automatiqueautoscaling2.png)
+![Auto-scaling Configuration](../images/autoscaling2.png)
 *Détails de la configuration de scalabilité des fonctions Lambda.*
 
 ---
