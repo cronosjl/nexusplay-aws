@@ -62,11 +62,12 @@ def get_or_create_role():
         for p in policies:
             iam_client.attach_role_policy(RoleName=role_name, PolicyArn=p)
         
-        time.sleep(10) # Temps de propagation AWS
+        time.sleep(10)  # Temps de propagation AWS
         return role["Role"]["Arn"]
     except Exception as e:
         print(f"  ❌ Erreur critique : Impossible de trouver ou créer un rôle IAM. {e}")
         raise
+
 
 def zip_service(service_name, source_file):
     zip_path = f"/tmp/{service_name}.zip"
