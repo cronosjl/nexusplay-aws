@@ -1,251 +1,189 @@
-# 🎮 NexusPlay — Architecture Microservices AWS
+# NexusPlay — Architecture Microservices Serverless
 
-> Plateforme de mini-jeux multijoueurs hautement disponible et scalable
+[![AWS](https://img.shields.io/badge/AWS-232F3E?style=for-the-badge&logo=amazon-aws&logoColor=white)](https://aws.amazon.com/)
+[![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)](https://github.com/features/actions)
 
----
+**NexusPlay** est une plateforme de mini-jeux multijoueurs conçue pour une haute disponibilité et une scalabilité extrême. Ce projet implémente une architecture microservices serverless robuste sur AWS, automatisée via une pipeline CI/CD complète.
 
-## 🏗️ Architecture Globale
-                    ┌─────────────────────────────────────────┐
-                    │           GitHub Actions CI/CD           │
-                    │  lint → deploy → test → load-test        │
-                    └──────────────┬──────────────────────────┘
-                                   │
-                                   ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                    AWS API Gateway (REST)                         │
-│              Cache activé sur PROD (TTL 300s)                    │
-│                                                                  │
-│   /games          /users          /notifications                 │
-│      │               │                   │                       │
-└──────┼───────────────┼───────────────────┼───────────────────────┘
-│               │                   │
-▼               ▼                   ▼
-┌────────────┐  ┌────────────┐  ┌──────────────────┐
-│   Lambda   │  │   Lambda   │  │     Lambda       │
-│game-service│  │user-service│  │notif-service     │
-│ Python3.10 │  │ Python3.10 │  │ Python3.10       │
-└────────────┘  └────────────┘  └────────┬─────────┘
-│
-▼
-┌──────────────────┐
-│   AWS SNS Topic   │
-│  nexusplay-alerts │
-└──────────────────┘
-┌─────────────────┐   ┌──────────────────┐   ┌──────────────────┐
-│  CloudWatch     │   │ Secrets Manager  │   │   IAM Role       │
-│  Dashboards     │   │ nexusplay/config │   │ NexusPlayLambda  │
-│  Alarms/Logs    │   │ db_pass/api_key  │   │ Role             │
-└─────────────────┘   └──────────────────┘   └──────────────────┘
+##  Documentation Détaillée
+
+Pour approfondir certains aspects techniques, veuillez consulter les documents suivants :
+*   📖 [Guide de Mise en Œuvre](docs/guide.md) : Détails sur l'exploitation SRE, la gestion des secrets et la configuration avancée.
+*   🧪 [Protocole de Test & POC](docs/projet.md) : Comment valider les performances, rapport complet du Proof of Concept et galerie de preuves.
 
 ---
 
-## ☁️ Services AWS Utilisés
+## ️ Architecture du Système
 
-| Service | Icône | Rôle | Points |
-|---------|-------|------|--------|
-| **AWS Lambda** | ƛ | 3 microservices serverless auto-scalables | Microservices + Scalabilité |
-| **API Gateway** | 🌐 | Point d'entrée REST, cache prod, 3 stages | Load balancing + Cache |
-| **Amazon SNS** | 📢 | Notifications email/alertes en temps réel | Notifications incidents |
-| **CloudWatch** | 📊 | Monitoring, alarms, logs centralisés | Monitoring centralisé |
-| **Secrets Manager** | 🔐 | Gestion sécurisée des secrets et configs | Gestion des secrets |
-| **IAM** | 🔑 | Rôle d'exécution avec permissions minimales | Sécurité |
-| **Route 53** | 🌍 | DNS haute disponibilité Active/Backup | DNS HA |
-| **GitHub Actions** | ⚙️ | CI/CD automatisé lint→deploy→test→loadtest | CI/CD |
+L'architecture repose sur une approche **Event-Driven** et **Serverless**, garantissant une isolation complète des services et une mise à l'échelle automatique sans gestion de serveurs.
 
----
+```mermaid
+graph TD
+    User((Joueur)) --> Route53[Route 53 HA DNS]
+    Route53 --> APIGW[AWS API Gateway]
+    
+    subgraph "Couche de Distribution"
+        APIGW --> Cache[(API Cache - Prod)]
+    end
 
-## 🎯 Couverture des exigences du projet
+    subgraph "Microservices (AWS Lambda)"
+        APIGW -- /games --> GameService[Game Service]
+        APIGW -- /users --> UserService[User Service]
+        APIGW -- /notifications --> NotifService[Notification Service]
+    end
 
-| Exigence | Solution | Statut |
-|----------|----------|--------|
-| Logique microservices (2+ services) | 3 Lambda indépendants (game/user/notif) | ✅ |
-| Équilibrage de charge + redondance | API Gateway Regional multi-AZ | ✅ |
-| Scalabilité automatique | Lambda scale automatiquement 0→∞ | ✅ |
-| Monitoring centralisé | CloudWatch Alarms + Logs sur chaque Lambda | ✅ |
-| Pipeline CI/CD | GitHub Actions (lint→deploy→test→load) | ✅ |
-| Test de charge avec CI/CD | Locust 20 users, 30s sur prod dans pipeline | ✅ |
-| Cache performances | API Gateway cache 0.5GB TTL 300s sur prod | ✅ |
-| Gestion des secrets | AWS Secrets Manager nexusplay/config | ✅ |
-| Notifications incidents | SNS Topic nexusplay-alerts | ✅ |
-| DNS haute disponibilité | Route 53 Active/Backup | ✅ |
+    subgraph "Gestion & Monitoring"
+        GameService & UserService & NotifService --> CloudWatch[CloudWatch Metrics/Logs]
+        CloudWatch --> Alarms[CloudWatch Alarms]
+        Alarms --> SNS[Amazon SNS]
+        SNS --> Email((Alertes SRE))
+        
+        GameService & UserService --> Secrets[AWS Secrets Manager]
+    end
 
----
+    subgraph "CI/CD Pipeline"
+        GH[GitHub Actions] --> Lint[Linting]
+        Lint --> Deploy[Automated Deploy]
+        Deploy --> FuncTest[Functional Tests]
+        FuncTest --> LoadTest[Locust Load Test]
+    end
+```
 
-## 📁 Structure du Projet
-nexusplay-aws/
-├── services/
-│   ├── game_service/
-│   │   └── lambda_function.py    # CRUD jeux + système join
-│   ├── user_service/
-│   │   └── lambda_function.py    # CRUD joueurs + leaderboard
-│   └── notification_service/
-│       └── lambda_function.py    # Alertes via SNS
-├── scripts/
-│   ├── deploy.py                 # Déploiement complet AWS
-│   ├── test_api.py               # Tests fonctionnels
-│   └── load_test.py              # Tests de charge Locust
-├── .github/
-│   └── workflows/
-│       └── cicd.yml              # Pipeline CI/CD complet
-├── monitoring/                   # Rapports load test
-├── Makefile                      # Commandes simplifiées
-├── requirements.txt
-└── README.md
+### Points Clés
+- **Haute Disponibilité :** Multi-AZ par défaut via API Gateway et Lambda.
+- **DNS HA :** Configuration Route 53 avec basculement automatique.
+- **Scalabilité :** Passage de 0 à des milliers de requêtes instantanément.
+- **Performance :** Mise en cache API Gateway (TTL 300s sur Prod).
 
 ---
 
-## 🚀 Déploiement
+##  Stack Technique
 
-### Prérequis
+| Domaine | Technologies |
+| :--- | :--- |
+| **Cloud Provider** | Amazon Web Services (AWS) |
+| **Compute** | AWS Lambda (Python 3.10) |
+| **API Management** | AWS API Gateway (REST, Regional) |
+| **Sécurité** | AWS IAM, AWS Secrets Manager |
+| **Messaging** | Amazon SNS (Simple Notification Service) |
+| **Observabilité** | CloudWatch (Logs, Metrics, Alarms, Dashboards) |
+| **CI/CD** | GitHub Actions |
+| **Tests** | Pytest (Fonctionnels), Locust (Charge) |
+
+---
+
+##  Guide de Déploiement
+
+### 1. Préparation
 ```bash
-pip install -r requirements.txt
+make install
 ```
 
-### Configurer AWS (Whizlabs sandbox)
-```bash
-nano ~/.aws/credentials
-```
-```ini
-[default]
-aws_access_key_id=VOTRE_ACCESS_KEY
-aws_secret_access_key=VOTRE_SECRET_KEY
-```
-
-### Recréer le rôle IAM (nouvelle sandbox)
-```bash
-aws iam create-role \
-  --role-name NexusPlayLambdaRole \
-  --assume-role-policy-document '{
-    "Version": "2012-10-17",
-    "Statement": [{"Effect": "Allow",
-      "Principal": {"Service": "lambda.amazonaws.com"},
-      "Action": "sts:AssumeRole"}]}'
-
-aws iam attach-role-policy --role-name NexusPlayLambdaRole \
-  --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-aws iam attach-role-policy --role-name NexusPlayLambdaRole \
-  --policy-arn arn:aws:iam::aws:policy/AmazonSNSFullAccess
-aws iam attach-role-policy --role-name NexusPlayLambdaRole \
-  --policy-arn arn:aws:iam::aws:policy/SecretsManagerReadWrite
-```
-
-### Déployer
-```bash
-make deploy
-```
-
-### Tester
-```bash
-make test              # stage dev
-make test STAGE=prod   # stage prod
-make test-all          # tous les stages
-```
-
-### Load test
-```bash
-make load-test
-```
-
----
-
-## 🌐 Endpoints API
-
-### Game Service — `/games`
-| Méthode | Action | Body |
-|---------|--------|------|
-| GET | Liste tous les jeux | — |
-| GET | Détail jeu | `?id=1` |
-| POST | Créer un jeu | `{"name": "...", "max_players": 50}` |
-| POST | Rejoindre un jeu | `{"id": "1", "action": "join"}` |
-| PUT | Mettre à jour | `{"id": "1", "status": "maintenance"}` |
-| DELETE | Supprimer | `{"id": "1"}` |
-
-### User Service — `/users`
-| Méthode | Action | Body |
-|---------|--------|------|
-| GET | Leaderboard trié par score | — |
-| GET | Profil joueur | `?id=1` |
-| POST | Créer joueur | `{"username": "...", "email": "..."}` |
-| PUT | Mettre à jour score | `{"id": "1", "score": 2000}` |
-| DELETE | Supprimer | `{"id": "1"}` |
-
-### Notification Service — `/notifications`
-| Méthode | Action | Body |
-|---------|--------|------|
-| GET | Health check | — |
-| POST | Envoyer alerte | `{"type": "alert", "message": "...", "subject": "..."}` |
-
----
-
-## 📡 Stages de déploiement
-
-| Stage | Branche Git | URL | Cache |
-|-------|-------------|-----|-------|
-| dev | develop | `https://{api_id}.../dev` | ❌ |
-| test | test | `https://{api_id}.../test` | ❌ |
-| prod | main | `https://{api_id}.../prod` | ✅ 300s |
-
----
-
-## 📊 Monitoring CloudWatch
-
-Pour chaque Lambda, 2 alarmes sont configurées :
-- **Errors** — déclenche si > 5 erreurs/minute
-- **Duration** — déclenche si latence > 5000ms
-
-Logs accessibles via :
-AWS Console → CloudWatch → Log Groups → /aws/lambda/nexusplay-*
-
----
-
-## 🔥 Pipeline CI/CD
-Push sur GitHub
-│
-▼
-┌─────────────┐
-│  1. LINT    │ flake8 sur services/ et scripts/
-└──────┬──────┘
-│
-▼
-┌─────────────┐
-│  2. DEPLOY  │ python scripts/deploy.py
-└──────┬──────┘
-│
-▼
-┌─────────────┐
-│  3. TEST    │ python scripts/test_api.py {stage}
-└──────┬──────┘
-│ (prod uniquement)
-▼
-┌─────────────┐
-│ 4. LOAD TEST│ Locust 20 users / 30s
-└──────┬──────┘
-│
-▼
-┌─────────────┐
-│  ARTIFACT   │ config.json + rapport HTML
-└─────────────┘
-
----
-
-## 👥 Équipe
-
-| Membre | Rôle |
-|--------|------|
-| Jean-Louis | Infrastructure AWS + CI/CD |
-| Coéquipier | Services Lambda + Tests |
-
----
-
-## ⚡ Commandes Make
+### 2. Déploiement via Terraform
+Le déploiement est automatisé via **Terraform** pour garantir une infrastructure immuable :
+1. **IAM Roles** : Provisionnement des rôles et politiques de sécurité.
+2. **Services AWS** : Création de SNS, Secrets Manager et CloudWatch Alarms.
+3. **Lambda & API Gateway** : Déploiement des microservices et exposition via l'API Gateway avec cache.
 
 ```bash
-make help        # Affiche l'aide
-make install     # Installe les dépendances
-make deploy      # Déploie sur AWS
-make test        # Teste le stage dev
-make test-all    # Teste tous les stages
-make load-test   # Lance Locust load test
-make lint        # Vérifie le code
-make clean       # Nettoie les fichiers temporaires
+terraform init
+terraform apply
 ```
+
+---
+
+##  Guide SRE & Ops (Exploitation)
+
+###  Monitoring & Observabilité
+Accédez aux métriques via la console CloudWatch :
+- **Logs** : Préfixe `/aws/lambda/nexusplay-*`.
+- **Alarmes** : Errors > 5 ou Duration > 5s déclenchent une alerte SNS.
+
+![Metrics CloudWatch](images/monitoringcentralisecloudwatchmetrics.png)
+*Analyse des métriques détaillées par service.*
+
+###  Gestion des Secrets
+Tous les secrets sont centralisés dans **AWS Secrets Manager** (`nexusplay/config`). Ne jamais stocker de secrets en clair dans le code.
+
+![Secret Management](images/Integrerunsysteemedegestiondessecretssecuriseviaawssecretmanager.png)
+
+###  Incident Response (Playbook)
+
+| Incident | Action Immédiate |
+| :--- | :--- |
+| **Erreurs 5XX** | Consulter CloudWatch Logs pour identifier l'exception Python. |
+| **Timeout (504)** | Vérifier la latence des services externes ou augmenter le timeout Lambda. |
+| **Throttling** | Analyser la concurrence Lambda et demander une augmentation de quota si nécessaire. |
+
+---
+
+##  Rapport du POC (Proof of Concept)
+
+### Objectifs Atteints
+- **Microservices** : 3 services isolés (Game, User, Notif). ✅
+- **Auto-scaling** : Validation de la montée en charge automatique. ✅
+- **CI/CD** : Pipeline complet automatisé (Lint -> Deploy -> Test -> Load Test). ✅
+- **Haute Disponibilité** : Architecture Multi-AZ et DNS HA simulé. ✅
+
+### Résultats des Tests de Charge
+Simulation avec 20 utilisateurs simultanés via Locust :
+- **Taux de succès** : 100%
+- **Temps de réponse moyen** : ~150ms
+
+![Load Test Result](images/testdechargepourvaliderlesperformancesavecCICD..png)
+
+---
+
+##  Galerie Complète des Preuves Techniques
+
+###  Logique Microservices & API
+| Image | Description |
+| :--- | :--- |
+| ![Lambda](images/logiquemicroservicesfonctionlambda.png) | Fonctions Lambda déployées. |
+| ![API Gateway](images/Logiquemicroservicesapigateway.png) | Structure des ressources API. |
+| ![API Details](images/Logiquemicroservicesapigatewaydetails.png) | Configuration des méthodes. |
+
+### ⚖ Équilibrage de Charge & Réseau
+| Image | Description |
+| :--- | :--- |
+| ![Network Mapping](images/equilibragedeschargesloadbalancernetworkmapping.png) | Flux réseau du load balancer. |
+| ![LB Dashboard](images/equilibragedeschargesloadbalancerdashboard.png) | Dashboard de performance. |
+| ![LB Monitoring](images/equilibragedeschargesloadbalancermonitoring.png) | Métriques de trafic. |
+
+###  Haute Disponibilité DNS
+| Image | Description |
+| :--- | :--- |
+| ![Route 53](images/serveurDNShautementdisponiblerouteS3.png) | Route 53 vers S3/Static. |
+| ![VPC 1](images/serveurDNShautementdisponiblevpc1.png) | VPC Multi-AZ (Partie 1). |
+| ![VPC 2](images/serveurDNShautementdisponiblevpc2.png) | VPC Multi-AZ (Partie 2). |
+
+### 🚀 Scalabilité Automatique
+| Image | Description |
+| :--- | :--- |
+| ![Auto-scaling 1](images/autoscaling1.png) | Politique d'Auto-scaling. |
+| ![Auto-scaling 2](images/autoscaling2.png) | Concurrence et limites. |
+| ![Auto-scaling 3](images/autoscaling3.png) | Événements de mise à l'échelle. |
+
+###  Monitoring & Alerting (CloudWatch)
+| Image | Description |
+| :--- | :--- |
+| ![Alarms](images/monitoringcentralisecloudwatchalarms.png) | Alarmes CloudWatch actives. |
+| ![Dashboard](images/monitoringcentralisecloudwatchdashboard.png) | Dashboard opérationnel. |
+| ![Dashboard Details](images/monitoringcentralisecloudwatchdashboarddetails.png) | Widgets de monitoring. |
+| ![Resource Health](images/monitoringcentralisecloudwatchResourceHealth.png) | État de santé des ressources. |
+
+###  Pipeline CI/CD (GitHub Actions)
+| Image | Description |
+| :--- | :--- |
+| ![Pipeline 1](images/pipeline.png) | Workflow global réussi. |
+| ![Pipeline 2](images/pipeline2.png) | Historique des déploiements. |
+| ![Lint](images/pipelinedetailslint.png) | Détails du Linting. |
+| ![Deploy](images/pipelinedetailsdeploy.png) | Détails du Déploiement. |
+| ![Config Test](images/pipelinegenerateconfig.jsonfortestingstages.png) | Génération du fichier config. |
+
+---
+
+### 🔗 Liens Utiles
+*   [📖 Guide de Mise en Œuvre](docs/guide.md)
+*   [🧪 Rapport de Projet & POC](docs/projet.md)
