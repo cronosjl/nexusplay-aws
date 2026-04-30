@@ -27,11 +27,22 @@ def get_account_id():
 
 
 def get_or_create_role():
+    # Liste des noms de rôles possibles (LabRole est le standard des environnements bridés)
+    possible_roles = ["LabRole", "NexusPlayLambdaRole", "vocstartsoft"]
+    
+    for role_name in possible_roles:
+        try:
+            response = iam_client.get_role(RoleName=role_name)
+            arn = response["Role"]["Arn"]
+            print(f"  ✅ Utilisation du rôle existant : {role_name}")
+            return arn
+        except iam_client.exceptions.NoSuchEntityException:
+            continue
+
+    # Si aucun n'existe, on tente la création (uniquement sur ton compte perso)
     role_name = "NexusPlayLambdaRole"
+    print(f"  🆕 Tentative de création du rôle : {role_name}")
     try:
-        return iam_client.get_role(RoleName=role_name)["Role"]["Arn"]
-    except iam_client.exceptions.NoSuchEntityException:
-        print(f"  🆕 Création du rôle : {role_name}")
         role = iam_client.create_role(
             RoleName=role_name,
             AssumeRolePolicyDocument=json.dumps({
@@ -50,9 +61,12 @@ def get_or_create_role():
         ]
         for p in policies:
             iam_client.attach_role_policy(RoleName=role_name, PolicyArn=p)
-        time.sleep(10)
+        
+        time.sleep(10) # Temps de propagation AWS
         return role["Role"]["Arn"]
-
+    except Exception as e:
+        print(f"  ❌ Erreur critique : Impossible de trouver ou créer un rôle IAM. {e}")
+        raise
 
 def zip_service(service_name, source_file):
     zip_path = f"/tmp/{service_name}.zip"

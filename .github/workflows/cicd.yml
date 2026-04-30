@@ -49,9 +49,10 @@ jobs:
       - name: Load Test (prod only)
         if: github.ref_name == 'main'
         run: |
+          mkdir -p monitoring
           API_ID=$(python3 -c "import json; print(json.load(open('config.json'))['api_id'])")
           locust -f scripts/load_test.py \
-            --host=https://$API_ID.execute-api.us-east-1.amazonaws.com \
+            --host=https://$API_ID.execute-api.${{ env.AWS_REGION }}.amazonaws.com \
             --users=20 --spawn-rate=2 --run-time=30s --headless \
             --html=monitoring/load_test_report.html
         continue-on-error: true

@@ -12,3 +12,8 @@ config.json
 *.log
 .env
 .venv/
+.venv/
+__pycache__/
+*.pyc
+.venv/
+venv/
