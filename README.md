@@ -187,3 +187,10 @@ Simulation avec 20 utilisateurs simultanés via Locust :
 ### 🔗 Liens Utiles
 *   [📖 Guide de Mise en Œuvre](docs/guide.md)
 *   [🧪 Rapport de Projet & POC](docs/projet.md)
+
+---
+
+## ✍️ Auteurs
+Ce projet a été réalisé par :
+*   **ABDOULAYE SIDIBE**
+*   **Jean Louis DJIONGO DONGMO**
