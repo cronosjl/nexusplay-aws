@@ -6,13 +6,13 @@ Ce guide détaille les procédures d'exploitation, de maintenance et de monitori
 
 ##  Gestion de l'Infrastructure (IaC)
 
-Contrairement aux approches traditionnelles avec Terraform, ce projet utilise un script de déploiement basé sur **Boto3** (`scripts/deploy.py`), permettant une intégration plus souple avec la logique applicative Python et les environnements de sandbox (type Whizlabs).
+Le déploiement de l'infrastructure est entièrement géré avec **Terraform**, garantissant une gestion d'état précise et une reproductibilité totale des ressources AWS (Lambda, API Gateway, SNS, etc.).
 
 ### Cycle de Vie d'une Ressource
-1. **Initialisation** : Le script vérifie l'existence des rôles IAM et des ressources globales (SNS, Secrets).
-2. **Provisioning Lambda** : Les fonctions sont packagées et déployées avec leurs variables d'environnement.
-3. **Configuration API** : Les routes REST sont exposées et liées aux fonctions Lambda.
-4. **Stage Management** : Déploiement vers les environnements `dev`, `test` et `prod`.
+1. **Initialisation** (`terraform init`) : Prépare le backend et télécharge les providers nécessaires.
+2. **Planification** (`terraform plan`) : Visualise les changements avant application.
+3. **Déploiement** (`terraform apply`) : Provisionne et configure les ressources sur AWS.
+4. **Destruction** (`terraform destroy`) : Nettoie l'environnement si nécessaire.
 
 ![Network Mapping](../images/equilibragedeschargesloadbalancernetworkmapping.png)
 *Cartographie réseau de l'équilibrage de charge.*
@@ -109,7 +109,7 @@ L'automatisation est au cœur de NexusPlay. Chaque commit déclenche un workflow
 ### Étapes Clés :
 1. **Linting** : Vérification du style de code Python (PEP8).
    ![Lint Details](../images/pipelinedetailslint.png)
-2. **Déploiement** : Mise à jour de l'infrastructure via le script `deploy.py`.
+2. **Déploiement** : Mise à jour de l'infrastructure via **Terraform**.
    ![Deploy Details](../images/pipelinedetailsdeploy.png)
 3. **Tests de Stage** : Validation automatique après chaque déploiement.
    ![Config Generation](../images/pipelinegenerateconfig.jsonfortestingstages.png)

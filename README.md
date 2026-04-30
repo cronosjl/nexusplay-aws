@@ -80,16 +80,15 @@ graph TD
 make install
 ```
 
-### 2. Déploiement Automatisé
-Le script `scripts/deploy.py` gère l'intégralité de l'infrastructure (IaC via Boto3) :
-1. **IAM Roles** : Création du rôle `NexusPlayLambdaRole`.
-2. **SNS & Secrets** : Initialisation des canaux d'alerte et des coffres-forts de config.
-3. **Lambda Services** : Packaging et déploiement des 3 microservices.
-4. **API Gateway** : Exposition des routes et activation du cache sur `prod`.
-5. **CloudWatch** : Configuration automatique des alarmes.
+### 2. Déploiement via Terraform
+Le déploiement est automatisé via **Terraform** pour garantir une infrastructure immuable :
+1. **IAM Roles** : Provisionnement des rôles et politiques de sécurité.
+2. **Services AWS** : Création de SNS, Secrets Manager et CloudWatch Alarms.
+3. **Lambda & API Gateway** : Déploiement des microservices et exposition via l'API Gateway avec cache.
 
 ```bash
-make deploy
+terraform init
+terraform apply
 ```
 
 ---
