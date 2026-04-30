@@ -103,6 +103,8 @@ Accédez aux métriques via la console CloudWatch :
 ![Metrics CloudWatch](images/monitoringcentralisecloudwatchmetrics.png)
 *Analyse des métriques détaillées par service.*
 
+Lorsque l'alarme se declenche, cela creer de nouvelles instances pour fluidifier le trafic.
+
 ###  Gestion des Secrets
 Tous les secrets sont centralisés dans **AWS Secrets Manager** (`nexusplay/config`). Ne jamais stocker de secrets en clair dans le code.
 
@@ -145,11 +147,11 @@ Simulation avec 20 utilisateurs simultanés via Locust :
 | ![API Details](images/Logiquemicroservicesapigatewaydetails.png) | Configuration des méthodes. |
 
 ### ⚖ Équilibrage de Charge & Réseau
-| Image | Description |
-| :--- | :--- |
-| ![Network Mapping](images/equilibragedeschargesloadbalancernetworkmapping.png) | Flux réseau du load balancer. |
-| ![LB Dashboard](images/equilibragedeschargesloadbalancerdashboard.png) | Dashboard de performance. |
-| ![LB Monitoring](images/equilibragedeschargesloadbalancermonitoring.png) | Métriques de trafic. |
+| Image | Description                  |
+| :--- |:-----------------------------|
+| ![Network Mapping](images/equilibragedeschargesloadbalancernetworkmapping.png) | Flux réseau du load balancer |
+| ![LB Dashboard](images/equilibragedeschargesloadbalancerdashboard.png) | Dashboard de performance     |
+| ![LB Monitoring](images/equilibragedeschargesloadbalancermonitoring.png) | Dashboard load balancer .    |
 
 ###  Haute Disponibilité DNS
 | Image | Description |
@@ -159,18 +161,20 @@ Simulation avec 20 utilisateurs simultanés via Locust :
 | ![VPC 2](images/serveurDNShautementdisponiblevpc2.png) | VPC Multi-AZ (Partie 2). |
 
 ### 🚀 Scalabilité Automatique
-| Image | Description |
-| :--- | :--- |
-| ![Auto-scaling 1](images/autoscaling1.png) | Politique d'Auto-scaling. |
-| ![Auto-scaling 2](images/autoscaling2.png) | Concurrence et limites. |
-| ![Auto-scaling 3](images/autoscaling3.png) | Événements de mise à l'échelle. |
+| Image                                      | Description                      |
+|:-------------------------------------------|:---------------------------------|
+| ![Auto-scaling 1](images/autoscaling1.png) | Politique d'Auto-scaling.        |
+| ![Auto-scaling 2](images/autoscaling2.png) | Concurrence et limites.          |
+| ![Auto-scaling 3](images/autoscaling3.png) | Événements de mise à l'échelle.  |
+| ![Auto-scaling 4](images/autoscaling4.png) | Création de nouvelles instances. |
 
 ###  Monitoring & Alerting (CloudWatch)
-| Image | Description |
-| :--- | :--- |
-| ![Alarms](images/monitoringcentralisecloudwatchalarms.png) | Alarmes CloudWatch actives. |
-| ![Dashboard](images/monitoringcentralisecloudwatchdashboard.png) | Dashboard opérationnel. |
-| ![Dashboard Details](images/monitoringcentralisecloudwatchdashboarddetails.png) | Widgets de monitoring. |
+| Image | Description                   |
+| :--- |:------------------------------|
+| ![Alarms](images/monitoringcentralisecloudwatchmetrics1.png) | CloudWatch metrics.           |
+| ![Alarms](images/monitoringcentralisecloudwatchalarms.png) | Alarmes CloudWatch actives.   |
+| ![Dashboard](images/monitoringcentralisecloudwatchdashboard.png) | Dashboard opérationnel.       |
+| ![Dashboard Details](images/monitoringcentralisecloudwatchdashboarddetails.png) | Widgets de monitoring.        |
 | ![Resource Health](images/monitoringcentralisecloudwatchResourceHealth.png) | État de santé des ressources. |
 
 ###  Pipeline CI/CD (GitHub Actions)
